@@ -1,64 +1,31 @@
 'use strict'
 
+const API = 'https://raw.githubusercontent.com/krunch12345/brandFashionJS/task3/src/jsons'
+
 class ProductsList {
     constructor(container = '.products-block') {
         this.container = container
         this.goods = []
-        this._fetchProducts()
+        this.allProducts = []
+        this._getProducts()
+            .then(data => {
+                this.goods = [...data]
+                this.render()
+            })
     }
 
-    _fetchProducts() {
-        this.goods = [
-            {
-                id: 1,
-                title: 'ellery x m\'o capsule 01',
-                price: 52,
-                img: 'image/products-item-1.png',
-                description: '01. Known for her sculptural takes on traditional tailoring, Australian arbiter of cool Kym Ellery teams up with Moda Operandi.'
-            },
-            {
-                id: 2,
-                title: 'ellery x m\'o capsule 02',
-                price: 54,
-                img: 'image/products-item-2.png',
-                description: '02. Known for her sculptural takes on traditional tailoring, Australian arbiter of cool Kym Ellery teams up with Moda Operandi.'
-            },
-            {
-                id: 3,
-                title: 'ellery x m\'o capsule 03',
-                price: 56,
-                img: 'image/products-item-3.png',
-                description: '03. Known for her sculptural takes on traditional tailoring, Australian arbiter of cool Kym Ellery teams up with Moda Operandi.'
-            },
-            {
-                id: 4,
-                title: 'ellery x m\'o capsule 04',
-                price: 58,
-                img: 'image/products-item-4.png',
-                description: '04. Known for her sculptural takes on traditional tailoring, Australian arbiter of cool Kym Ellery teams up with Moda Operandi.'
-            },
-            {
-                id: 5,
-                title: 'ellery x m\'o capsule 05',
-                price: 60,
-                img: 'image/products-item-5.png',
-                description: '05. Known for her sculptural takes on traditional tailoring, Australian arbiter of cool Kym Ellery teams up with Moda Operandi.'
-            },
-            {
-                id: 6,
-                title: 'ellery x m\'o capsule 06',
-                price: 62,
-                img: 'image/products-item-6.png',
-                description: '06. Known for her sculptural takes on traditional tailoring, Australian arbiter of cool Kym Ellery teams up with Moda Operandi.'
-            },
-        ]
+    _getProducts() {
+        return fetch(`${API}/catalogData.json`)
+            .then(result => result.json())
+            .catch(error => {
+                alert(error)
+            })
     }
 
     sumPriceProducts() {
-        let sum = null
-        this.goods.forEach((good) => sum += good.price)
         window.onload = () => {
-            alert(`Сумма всех товаров $${sum}`)
+            let sumPrice = this.allProducts.reduce((sum, product) => sum += product.price, 0)
+            alert(`${sumPrice}`)
         }
     }
 
@@ -66,6 +33,7 @@ class ProductsList {
         const block = document.querySelector(this.container)
         for (let product of this.goods) {
             const productObj = new ProductItem(product)
+            this.allProducts.push(productObj)
             block.insertAdjacentHTML('beforeend', productObj.render())
         }
     }
@@ -103,15 +71,88 @@ class ProductItem {
 }
 
 class Cart {
-    //constructor() {}
+    constructor() {
+        this.goodsCart = []
+        this.allProductsCart = []
+        this._getProductsCart()
+            .then(data => {
+                this.goodsCart = [...data["contents"]]
+                this.renderCart()
+            })
+    }
+
+    _getProductsCart() {
+        return fetch(`${API}/getBasket.json`)
+            .then(result => result.json())
+            .catch(error => {
+                alert(error)
+            })
+    }
     //addToCart() {}
     //removeFromCart() {}
+
+    htmlEl = ``
+
+    renderCart() {
+        for (let product of this.goodsCart) {
+            const productObj = new CartItem(product)
+            this.allProductsCart.push(productObj)
+            console.log(productObj)
+            this.htmlEl += productObj.render()
+        }
+    }
+
+    getBasket() {
+        let buttonEl = document.querySelector('.cart-btn')
+        buttonEl.addEventListener('click', () => {
+            Swal.fire({
+                title: 'В корзине:',
+                // text: 'Текст',
+                // icon: 'info',
+                width: 1200,
+                html: `<div class="products-block products-block-modal">
+                           ${this.htmlEl}
+                       </div>
+                       <div class="carts-product">
+                           <div class="shopping-cart-btn shopping-cart-btn-modal">
+                               <a href="../cart.html">
+                                   <button class="cart-content-btn">continue shopping</button>
+                               </a>
+                           </div>
+                       </div>`,
+                confirmButtonText: 'Закрыть'
+            })
+        })
+    }
 }
 
 class CartItem {
-    //constructor() {}
+    constructor(product) {
+        this.id = product.id
+        this.title = product.title
+        this.price = product.price
+        this.img = product.img
+        this.description = product.description
+        this.quantity = product.quantity
+    }
+
+    render() {
+        return `<div class="products-item">
+                    <img class="products-item-photo" src="${this.img}" alt="products-item-${this.id}" height="420">
+                    <a href="product.html" class="products-link">
+                        <span class="products-item-title">${this.title}</span>
+                        <p class="products-item-txt" style="text-align: start">${this.description}</p>
+                        <span class="products-item-price">$${this.price}</span>
+                        <span class="products-item-price">Количество: ${this.quantity}</span>
+                    </a>
+                </div>`
+    }
 }
 
 let list = new ProductsList()
 list.render()
 list.sumPriceProducts()
+
+let basket = new Cart()
+basket.renderCart()
+basket.getBasket()
